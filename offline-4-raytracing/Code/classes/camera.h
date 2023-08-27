@@ -11,7 +11,7 @@ class Camera {
     vector3f right;
 
 public:
-    Camera(vector3f position = vector3f(100, 0, -100), vector3f target = vector3f(0, 0, 0)) {
+    Camera(vector3f position = vector3f(100, 50, -100), vector3f target = vector3f(0, 50, 0)) {
         vector3f up = {0, 1, 0};
         this->position = position;
         this->target = target;

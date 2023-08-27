@@ -68,15 +68,16 @@ public:
         return;
     }
 
-    void change_color(color c)
-    {
-        this->clr = c;
-    }
-
     vector3f normal_at(vector3f& point)
     {
         return (point - this->center).normalize();
     }
+
+    color get_color_at(vector3f point)
+    {
+        return this->clr;
+    }
+
 
     void show()
     {
@@ -107,17 +108,6 @@ public:
             }
             glEnd();
         }
-        // for (int j = 0; j < stacks; j++){
-        //     glBegin(GL_LINE_LOOP);
-        //     for (int i = 0; i < slices; i++) {
-        //         glColor3f(1, 1, 1);
-        //         glVertex3f(vertices[j][i].x, vertices[j][i].y, vertices[j][i].z);
-        //         glVertex3f(vertices[j][i + 1].x, vertices[j][i + 1].y, vertices[j][i + 1].z);
-        //         glVertex3f(vertices[j + 1][i + 1].x, vertices[j + 1][i + 1].y, vertices[j + 1][i + 1].z);
-        //         glVertex3f(vertices[j + 1][i].x, vertices[j + 1][i].y, vertices[j + 1][i].z);
-        //     }
-        //     glEnd();
-        // }
     }
 
     void print()
@@ -131,6 +121,11 @@ public:
         cout << "Specular: " << this->specular << endl;
         cout << "Reflection: " << this->reflection << endl;
         cout << "Shininess: " << this->shininess << endl;
+    }
+    
+    void change_color(color c)
+    {
+        this->clr = c;
     }
 
     ~sphere()

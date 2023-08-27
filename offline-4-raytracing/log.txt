@@ -1,0 +1,1 @@
+checkerboard: hit distance is negative

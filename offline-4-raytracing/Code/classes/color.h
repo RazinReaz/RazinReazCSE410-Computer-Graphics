@@ -22,5 +22,4 @@ color color_array[] = {
     color(1, 1, 0), // yellow
     color(1, 0, 1),  // purple
     color(0, 1, 1)  // cyan
-
 };
