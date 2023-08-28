@@ -12,14 +12,16 @@ class point_light : public light {
     point_light(vector3f position, double falloff) : light(position, falloff) {
     }
 
-    bool is_visible_from(vector3f point, std::vector<shape3d*> objects) {
+    bool is_visible_from(vector3f point, ray& r, std::vector<shape3d*> objects) {
+        const double offset = 1;
         vector3f direction = (position - point).normalize();
-        const double offset = 0.01;
-        ray r = ray(point + direction * offset, direction);
-        for(int i = 0; i < objects.size(); i++) {
+        vector3f normal = r.hit_info.object->normal_at(point);
+        double distance_to_source = (position - point).length();
+        ray to_source = ray(point + normal * offset, direction);
+        for(auto object : objects) {
             //! might change
-            objects[i]->calculate_hit_distance(r);
-            if(r.hit_info.hit) {
+            object->calculate_hit_distance(to_source);
+            if(to_source.hit_info.hit && to_source.hit_info.distance < distance_to_source - offset) {
                 return false;
             }
         }

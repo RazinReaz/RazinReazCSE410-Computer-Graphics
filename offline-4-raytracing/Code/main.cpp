@@ -135,8 +135,8 @@ void keyboardListener(unsigned char key, int xx, int yy)
                     }
                     if(r.hit_info.hit) {
                         vector3f point = r.origin + r.direction * r.hit_info.distance;
-                        color ambient_diffuse_specular_component = r.hit_info.object->get_diffuse_and_specular_color(point, &r, lights, objects); // here i am passing pointer to r, otherwise it gives circular dependency error
-                        color reflection_component = r.hit_info.object->get_reflection_color(point, &r, lights, objects, recursions);
+                        color ambient_diffuse_specular_component = r.hit_info.object->get_diffuse_and_specular_color(point, r, lights, objects); // here i am passing pointer to r, otherwise it gives circular dependency error
+                        color reflection_component = r.hit_info.object->get_reflection_color(point, r, lights, objects, recursions);
                         color c = ambient_diffuse_specular_component + reflection_component;
                         red = c.r * 255;
                         green = c.g * 255;
@@ -182,6 +182,27 @@ void keyboardListener(unsigned char key, int xx, int yy)
             break;
         case 's':
             camera.move_with_same_target({0, 1, 0}, -bonus_mark_rotation_rate);
+            break;
+        case 'i':
+            lights[0]->position.y += 1;
+            break;
+        case 'k':
+            lights[0]->position.y -= 1;
+            break;
+        case 'j':
+            lights[0]->position.x -= 1;
+            break;
+        case 'l': 
+            lights[0]->position.x += 1;
+            break;
+        case 'u':
+            lights[0]->position.z -= 1;
+            break;
+        case 'o':
+            lights[0]->position.z += 1;
+            break;
+        case 'q':
+            exit(0);
             break;
         default:
             break;
