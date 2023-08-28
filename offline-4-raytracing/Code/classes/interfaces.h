@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <cmath>
 #include <cassert>
 #include <vector>
@@ -42,7 +43,7 @@ public:
     {
         this->origin = origin;
         this->direction = direction.normalize();
-        this->hit_info.distance = 100000.0;
+        this->hit_info.distance = 1000000.0;
         this->hit_info.hit = false;
         this->hit_info.normal = vector3f(0, 0, 0);
         this->hit_info.object = NULL;
@@ -102,6 +103,7 @@ public:
     {
         this->ambient = ambient;
         this->diffuse = diffuse;
+        this->specular = specular;
         this->reflection = reflection;
         this->shininess = shininess;
     }
@@ -112,7 +114,7 @@ public:
     virtual vector3f normal_at(vector3f &point) = 0; // assumes that the point is always on the shape
     virtual color get_color_at(vector3f point) = 0;  // assumes that the point is always on the shape
     color get_diffuse_and_specular_color(vector3f point, ray& r, std::vector<light *> lights, std::vector<shape3d *> objects);
-    color get_reflection_color(vector3f point, ray& r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions);
+    color get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions);
 
     virtual void show() = 0;
 
@@ -124,7 +126,6 @@ public:
 color shape3d::get_diffuse_and_specular_color(vector3f point, ray& r, std::vector<light *> lights, std::vector<shape3d *> objects)
 {
     // assumes that the point is always on the shape
-    
     double lambert = 0,
            phong = 0;
     vector3f N = this->normal_at(point);
@@ -146,30 +147,33 @@ color shape3d::get_diffuse_and_specular_color(vector3f point, ray& r, std::vecto
         // specular component
         phong += pow(R.dot(to_source), shininess) * scaling_factor;
     }
-
-    // if (phong < 0.01)
-    //     return color(0, 1, 0);
     color object_color = get_color_at(point);
 
     double diffuse_component = this->diffuse * lambert;
     double specular_component = this->specular * phong;
-    double red = (this->ambient + diffuse_component + specular_component) * object_color.r;
-    double green = (this->ambient + diffuse_component + specular_component) * object_color.g;
-    double blue = (this->ambient + diffuse_component + specular_component) * object_color.b;
-    return color(red, green, blue);
+    return object_color * (this->ambient + diffuse_component + specular_component);
 };
 
-color shape3d::get_reflection_color(vector3f point, ray& r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions){
-    // ray current_ray = r;
-    // while(current_ray.hit_info.hit && recursions--) {
-    //     vector3f reflection_point = current_ray.origin + current_ray.direction * current_ray.hit_info.distance;
-    //     vector3f normal = current_ray.hit_info.normal;
-    //     current_ray = current_ray.reflect(reflection_point, normal);
-    //     for (auto object : objects) {
-    //         object->calculate_hit_distance(current_ray);
-    //     }
-    // }
-    // color reflected = 
-
-    return color(0, 1, 0);
+color shape3d::get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions){
+    ray current_ray = r;
+    double offset = 1.0, multiplier = 1.0;
+    color reflected;
+    while(--recursions) {
+        vector3f reflection_point = current_ray.origin + current_ray.direction * current_ray.hit_info.distance;
+        vector3f normal = current_ray.hit_info.normal;
+        current_ray = current_ray.reflect(reflection_point, normal);
+        current_ray.origin = current_ray.origin + current_ray.direction * offset;
+        for (auto object : objects) {
+            object->calculate_hit_distance(current_ray);
+        }
+        if (!current_ray.hit_info.hit){
+            return color(0, 0, 0);
+        }
+        vector3f final_point = current_ray.origin + current_ray.direction * current_ray.hit_info.distance;
+        reflected += current_ray.hit_info.object->get_diffuse_and_specular_color(final_point, current_ray, lights, objects) * multiplier;
+        multiplier *= current_ray.hit_info.object->reflection;
+    }
+    // vector3f final_point = current_ray.origin + current_ray.direction *current_ray.hit_info.distance;
+    // color reflected_ = current_ray.hit_info.object->get_diffuse_and_specular_color(final_point, current_ray, lights, objects );
+    return reflected * this->reflection;
 }

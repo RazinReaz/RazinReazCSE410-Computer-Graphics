@@ -28,7 +28,6 @@ public:
     vector3f center;
     double radius;
     color clr;
-    double specular, shininess;
     sphere(vector3f center, double radius, color c, double ambient, double diffuse, double specular, double reflection, double shininess) : shape3d(ambient, diffuse, specular, reflection, shininess)
     {
         this->center = center;
