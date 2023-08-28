@@ -4,9 +4,8 @@
 #include <fstream>
 #include <iostream>
 #include "vector3f.h"
-#include "ray.h"
 #include "color.h"
-#include "shape3d.h"
+#include "interfaces.h"
 
 
 using namespace std;
@@ -15,7 +14,7 @@ class checkerboard : public shape3d
     const int i_limit = 100, j_limit = 100;
 public:
     int size;
-    checkerboard(int size, double ambient, double diffuse, double reflection) : shape3d(ambient, diffuse, reflection){
+    checkerboard(int size, double ambient, double diffuse, double reflection) : shape3d(ambient, diffuse, 0, reflection, 0){
         this->size = size;
     }
 

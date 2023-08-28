@@ -3,9 +3,8 @@
 #include <vector>
 #include <gl/glut.h>
 #include "vector3f.h"
-#include "ray.h"
-#include "shape3d.h"
-#include "light.h"
+#include "interfaces.h"
+
 
 
 class point_light : public light {
@@ -13,12 +12,13 @@ class point_light : public light {
     point_light(vector3f position, double falloff) : light(position, falloff) {
     }
 
-    bool is_visible_from(vector3f point, vector<shape3d*> shapes) {
+    bool is_visible_from(vector3f point, std::vector<shape3d*> objects) {
         vector3f direction = (position - point).normalize();
         const double offset = 0.01;
         ray r = ray(point + direction * offset, direction);
-        for(int i = 0; i < shapes.size(); i++) {
-            shapes[i]->calculate_hit_distance(r);
+        for(int i = 0; i < objects.size(); i++) {
+            //! might change
+            objects[i]->calculate_hit_distance(r);
             if(r.hit_info.hit) {
                 return false;
             }

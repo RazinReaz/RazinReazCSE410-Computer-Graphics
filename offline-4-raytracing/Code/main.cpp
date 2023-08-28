@@ -8,23 +8,22 @@
 
 #include "classes/bitmap_image.hpp"
 #include "classes/camera.h"
-#include "classes/color.h"
 #include "classes/vector3f.h"
-#include "classes/ray.h"
-#include "classes/light.h"
+#include "classes/color.h"
+#include "classes/interfaces.h"
+
 #include "classes/point_light.h"
-#include "classes/shape3d.h"
 #include "classes/sphere.h"
 #include "classes/checkerboard.h"
 
 namespace utils {
-    bool printed[11] = {false, false, false, false, false, false, false, false, false, false, false};
+    std::vector<bool> printed(11, false);
     void progress_report(int i, int j, int image_width, int image_height ) {
         double completed = (i * image_width + j) * 100.0 / (image_width * image_height);
         // print progress once only when completed is a multiple of 10
         if( (int)completed % 10 == 0 && !printed[(int)std::round(completed / 10)] ) {
             printed[(int)std::round(completed / 10)] = true;
-            cout << (int)completed << "% completed" << endl;
+            cout << "Rendering " << (int)completed << "% completed" << endl;
         }
         return;
     }
@@ -43,14 +42,9 @@ Camera camera;
 bitmap_image image;
 
 
-const int divisions = 20;
-const double max_size = 1.0;
-const double del_dist = max_size / divisions;
-double dist = 0.0;
 int fovY, aspect_ratio, near_, far_;
 int window_size, recursions, checkerboard_size, image_width, image_height;
-double checkboard_ambient, checkboard_diffuse, checkboard_reflection
- ;
+double checkboard_ambient, checkboard_diffuse, checkboard_reflection;
 
 
 vector<shape3d *> objects;
@@ -77,9 +71,9 @@ void draw_checkerboard(int checkerboard_size){
 void draw_axes()
 {
     glLineWidth(3);
-    draw_line({0, 0, 0}, x_axis * 200);   
-    draw_line({0, 0, 0}, y_axis * 200);   
-    draw_line({0, 0, 0}, z_axis * 200);   
+    draw_line({0, 0, 0}, x_axis * 500);   
+    draw_line({0, 0, 0}, y_axis * 500);   
+    draw_line({0, 0, 0}, z_axis * 500);   
 }
 
 
@@ -98,13 +92,12 @@ void display()
     }
     
     draw_axes();
-    glutSwapBuffers(); // Render now
+    glutSwapBuffers();
 }
 
 void reshape(GLsizei width, GLsizei height)
 {
-    if (height == 0)
-        height = 1; // To prevent divide by 0
+    if (height == 0) height = 1; // To prevent divide by 0
     GLfloat aspect = (GLfloat)width / (GLfloat)height;
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION); // To operate on the Projection matrix
@@ -114,8 +107,8 @@ void reshape(GLsizei width, GLsizei height)
 
 void keyboardListener(unsigned char key, int xx, int yy)
 {
-    double camera_rotation_rate = 0.04;
-    double object_rotation_rate = 0.8;
+    double camera_rotation_rate = 0.1;
+    double object_rotation_rate = 1.0;
     double bonus_mark_rotation_rate = 0.4;
     switch (key)
     {
@@ -128,32 +121,35 @@ void keyboardListener(unsigned char key, int xx, int yy)
 
             rays.clear();
             image.clear();
+            utils::printed = std::vector<bool>(11, false);
             for (int i = 0; i < image_height; i++) {
                 for (int j = 0; j < image_width; j++)
                 {
                     vector3f pixel_position = camera.get_position() + camera.get_direction() * near_ + camera.get_right() * (j - (image_width-1)/ 2) * dw + camera.get_up() * ((image_height-1)/ 2 - i) * dh;
                     vector3f ray_direction = pixel_position - camera.get_position();
-                    // rays.push_back(ray(pixel_position, ray_direction));
                     ray r(pixel_position, ray_direction);
 
+                    int red = 0, green = 0, blue = 0;
                     for ( auto object : objects) {
                         object->calculate_hit_distance(r);
                     }
-                    int red = 0, green = 0, blue = 0;
                     if(r.hit_info.hit) {
-                        color c = r.hit_info.object->get_color_at(r.origin + r.direction * r.hit_info.distance);
+                        vector3f point = r.origin + r.direction * r.hit_info.distance;
+                        color ambient_diffuse_specular_component = r.hit_info.object->get_diffuse_and_specular_color(point, &r, lights, objects); // here i am passing pointer to r, otherwise it gives circular dependency error
+                        color reflection_component = r.hit_info.object->get_reflection_color(point, &r, lights, objects, recursions);
+                        color c = ambient_diffuse_specular_component + reflection_component;
                         red = c.r * 255;
                         green = c.g * 255;
                         blue = c.b * 255;
                     }
                     image.set_pixel(j, i, red, green, blue);
-
                     utils::progress_report(i,j,image_width,image_height);
-                    
                 }
             }
+            cout << "Rendering 100% completed" << endl;
             
             image.save_image("out.bmp");
+            cout << "image saved" << endl;
             break;
         }
         case '1':
@@ -175,16 +171,6 @@ void keyboardListener(unsigned char key, int xx, int yy)
         case '6':
             camera.tilt(-camera_rotation_rate);
             break;
-        case '.':
-            dist += del_dist;
-            if (dist > 1)
-                dist = 1;
-            break;
-        case ',':
-            dist -= del_dist;
-            if (dist < 0)
-                dist = 0;
-            break;
         case 'a':
             camera.revolve(object_rotation_rate, {0, 1, 0});
             break;
@@ -205,7 +191,7 @@ void keyboardListener(unsigned char key, int xx, int yy)
 
 void specialKeyListener(int key, int x, int y)
 {
-    double rate = 1.0;
+    double rate = 5.0;
     switch (key)
     {
     case GLUT_KEY_UP:

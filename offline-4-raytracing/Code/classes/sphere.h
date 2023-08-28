@@ -2,8 +2,9 @@
 
 #include <cassert>
 #include <gl/glut.h>
-#include "shape3d.h"
+#include "vector3f.h"
 #include "color.h"
+#include "interfaces.h"
 
 using namespace std;
 
@@ -28,13 +29,11 @@ public:
     double radius;
     color clr;
     double specular, shininess;
-    sphere(vector3f center, double radius, color c, double ambient, double diffuse, double specular, double reflection, double shininess) : shape3d(ambient, diffuse, reflection)
+    sphere(vector3f center, double radius, color c, double ambient, double diffuse, double specular, double reflection, double shininess) : shape3d(ambient, diffuse, specular, reflection, shininess)
     {
         this->center = center;
         this->radius = radius;
         this->clr = c;
-        this->specular = specular;
-        this->shininess = shininess;
     }
     bool is_ray_intersecting(ray& r) {
         bool ray_origin_inside = is_ray_inside(r);
