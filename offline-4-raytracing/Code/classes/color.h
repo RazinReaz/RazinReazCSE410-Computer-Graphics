@@ -7,9 +7,9 @@ typedef struct color {
         this->g = g;
         this->b = b;
     }
-    color operator+(const color &c);
+    color operator+(const color &c) const;
     color operator+=(const color &c);
-    color operator*(const double &d);
+    color operator*(const double &d) const;
 } color;
 
 // enum to define colors
@@ -27,7 +27,7 @@ color color_array[] = {
     color(0, 1, 1)  // cyan
 };
 
-color color::operator+(const color &c) {
+color color::operator+(const color &c) const {
     double r = this->r + c.r > 1 ? 1 : this->r + c.r;
     double g = this->g + c.g > 1 ? 1 : this->g + c.g;
     double b = this->b + c.b > 1 ? 1 : this->b + c.b;
@@ -41,7 +41,7 @@ color color::operator+=(const color &c) {
     return *this;
 }
 
-color color::operator*(const double &d) {
+color color::operator*(const double &d) const {
     double r = this->r * d > 1 ? 1 : this->r * d;
     double g = this->g * d > 1 ? 1 : this->g * d;
     double b = this->b * d > 1 ? 1 : this->b * d;

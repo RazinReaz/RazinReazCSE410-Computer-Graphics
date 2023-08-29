@@ -141,6 +141,10 @@ void keyboardListener(unsigned char key, int xx, int yy)
                         red = c.r * 255;
                         green = c.g * 255;
                         blue = c.b * 255;
+                    } else {
+                        red = sky_color.r * 255;
+                        green = sky_color.g * 255;
+                        blue = sky_color.b * 255;
                     }
                     image.set_pixel(j, i, red, green, blue);
                     utils::progress_report(i,j,image_width,image_height);

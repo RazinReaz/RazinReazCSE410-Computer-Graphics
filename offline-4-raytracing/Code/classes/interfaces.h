@@ -7,6 +7,7 @@
 #include "color.h"
 
 
+const color sky_color = {0, 0, 0};
 class ray;
 class shape3d;
 
@@ -156,20 +157,21 @@ color shape3d::get_diffuse_and_specular_color(vector3f point, ray& r, std::vecto
 
 color shape3d::get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions){
     ray current_ray = r;
-    double offset = 1.0, multiplier = 1.0;
-    color reflected;
+    double offset = 0.0001, multiplier = 1.0;
+    color reflected = {0, 0, 0};
+    vector3f final_point = point;
     while(--recursions) {
-        vector3f reflection_point = current_ray.origin + current_ray.direction * current_ray.hit_info.distance;
         vector3f normal = current_ray.hit_info.normal;
-        current_ray = current_ray.reflect(reflection_point, normal);
+        current_ray = current_ray.reflect(final_point, normal);
         current_ray.origin = current_ray.origin + current_ray.direction * offset;
         for (auto object : objects) {
             object->calculate_hit_distance(current_ray);
         }
         if (!current_ray.hit_info.hit){
-            return color(0, 0, 0);
+            reflected += sky_color * multiplier;
+            break;
         }
-        vector3f final_point = current_ray.origin + current_ray.direction * current_ray.hit_info.distance;
+        final_point = current_ray.origin + current_ray.direction * current_ray.hit_info.distance;
         reflected += current_ray.hit_info.object->get_diffuse_and_specular_color(final_point, current_ray, lights, objects) * multiplier;
         multiplier *= current_ray.hit_info.object->reflection;
     }
