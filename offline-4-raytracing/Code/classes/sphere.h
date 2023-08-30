@@ -11,15 +11,15 @@ using namespace std;
 class sphere : public shape3d
 {
 private:
-    bool is_ray_inside(ray& r)
+    bool is_ray_inside(ray &r)
     {
         return (this->center - r.origin).length() < this->radius;
     }
-    bool is_ray_outside(ray& r)
+    bool is_ray_outside(ray &r)
     {
         return (this->center - r.origin).length() > this->radius;
     }
-    double closest_point_on_ray(ray& r)
+    double closest_point_on_ray(ray &r)
     {
         return (this->center - r.origin).dot(r.direction);
     }
@@ -34,7 +34,8 @@ public:
         this->radius = radius;
         this->clr = c;
     }
-    bool is_ray_intersecting(ray& r) {
+    bool is_ray_intersecting(ray &r)
+    {
         bool ray_origin_inside = is_ray_inside(r);
         bool ray_origin_outside = is_ray_outside(r);
         double closest_t_from_center_to_ray = closest_point_on_ray(r);
@@ -47,7 +48,7 @@ public:
         return true;
     }
 
-    void calculate_hit_distance(ray& r)
+    void calculate_hit_distance(ray &r)
     {
         double a = r.direction.dot(r.direction);
         double b = 2 * r.direction.dot(r.origin - this->center);
@@ -62,20 +63,19 @@ public:
         double t = min(t1, t2);
         vector3f hit_point = r.origin + r.direction * t;
         vector3f normal = normal_at(hit_point);
-        r.set_hit(min(t1,t2), this, normal);
+        r.set_hit(t, this, normal);
         return;
     }
 
-    vector3f normal_at(vector3f& point)
+    vector3f normal_at(vector3f &point)
     {
         return (point - this->center).normalize();
     }
 
-    color get_color_at(vector3f point)
+    color get_color_at(vector3f &point) override
     {
         return this->clr;
     }
-
 
     void show()
     {
@@ -83,11 +83,13 @@ public:
         int stacks = 100, slices = 100;
         vector3f vertices[stacks + 1][slices + 1];
 
-        for (int j = 0; j <= stacks; j++) {
+        for (int j = 0; j <= stacks; j++)
+        {
             double phi = PI / 2 - j * PI / stacks;
             double y = this->center.y + radius * sin(phi);
 
-            for (int i = 0; i <= slices; i++) {
+            for (int i = 0; i <= slices; i++)
+            {
                 double theta = i * 2 * PI / slices;
                 double x = this->center.x + radius * cos(phi) * cos(theta);
                 double z = this->center.z + radius * cos(phi) * sin(theta);
@@ -95,9 +97,11 @@ public:
             }
         }
 
-        for (int j = 0; j < stacks; j++) { 
+        for (int j = 0; j < stacks; j++)
+        {
             glBegin(GL_QUADS);
-            for (int i = 0; i < slices; i++) { 
+            for (int i = 0; i < slices; i++)
+            {
                 glColor3f(this->clr.r, this->clr.g, this->clr.b);
                 glVertex3f(vertices[j][i].x, vertices[j][i].y, vertices[j][i].z);
                 glVertex3f(vertices[j][i + 1].x, vertices[j][i + 1].y, vertices[j][i + 1].z);
@@ -120,7 +124,7 @@ public:
         cout << "Reflection: " << this->reflection << endl;
         cout << "Shininess: " << this->shininess << endl;
     }
-    
+
     void change_color(color c)
     {
         this->clr = c;

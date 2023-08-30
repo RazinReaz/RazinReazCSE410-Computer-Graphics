@@ -6,8 +6,7 @@
 #include "vector3f.h"
 #include "color.h"
 
-
-const color sky_color = {0, 0, 0};
+const color sky_color = {0.5, 0.5, 0.9};
 class ray;
 class shape3d;
 
@@ -22,7 +21,7 @@ public:
         this->position = position;
         this->falloff = falloff;
     }
-    virtual bool is_visible_from(vector3f point, ray& r, std::vector<shape3d *> shape) = 0;
+    virtual bool is_visible_from(vector3f point, ray &r, std::vector<shape3d *> shape) = 0;
     virtual void show() = 0;
 };
 
@@ -34,7 +33,8 @@ typedef struct Hit_info
     double distance;
 } Hit_info;
 
-class ray {
+class ray
+{
 public:
     vector3f origin;
     vector3f direction;
@@ -111,27 +111,24 @@ public:
     // virtual bool is_ray_intersecting(ray& r) = 0;
 
     virtual void calculate_hit_distance(ray &r) = 0;
-
     virtual vector3f normal_at(vector3f &point) = 0; // assumes that the point is always on the shape
-    virtual color get_color_at(vector3f point) = 0;  // assumes that the point is always on the shape
-    color get_diffuse_and_specular_color(vector3f point, ray& r, std::vector<light *> lights, std::vector<shape3d *> objects);
-    color get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions);
-
+    virtual color get_color_at(vector3f &point) = 0;
     virtual void show() = 0;
-
-    // debug
     virtual void print() = 0;
+    
+    color get_diffuse_and_specular_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects);
+    color get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions);
 };
 
 
-color shape3d::get_diffuse_and_specular_color(vector3f point, ray& r, std::vector<light *> lights, std::vector<shape3d *> objects)
+color shape3d::get_diffuse_and_specular_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects)
 {
     // assumes that the point is always on the shape
     double lambert = 0,
            phong = 0;
     vector3f N = this->normal_at(point);
     vector3f R = r.reflect(point, N).direction;
-    
+
     for (auto light : lights)
     {
         if (!light->is_visible_from(point, r, objects))
@@ -155,19 +152,23 @@ color shape3d::get_diffuse_and_specular_color(vector3f point, ray& r, std::vecto
     return object_color * (this->ambient + diffuse_component + specular_component);
 };
 
-color shape3d::get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions){
+color shape3d::get_reflection_color(vector3f point, ray &r, std::vector<light *> lights, std::vector<shape3d *> objects, int recursions)
+{
     ray current_ray = r;
-    double offset = 0.0001, multiplier = 1.0;
+    double offset = 1, multiplier = 1.0;
     color reflected = {0, 0, 0};
     vector3f final_point = point;
-    while(--recursions) {
+    while (--recursions)
+    {
         vector3f normal = current_ray.hit_info.normal;
         current_ray = current_ray.reflect(final_point, normal);
         current_ray.origin = current_ray.origin + current_ray.direction * offset;
-        for (auto object : objects) {
+        for (auto object : objects)
+        {
             object->calculate_hit_distance(current_ray);
         }
-        if (!current_ray.hit_info.hit){
+        if (!current_ray.hit_info.hit)
+        {
             reflected += sky_color * multiplier;
             break;
         }

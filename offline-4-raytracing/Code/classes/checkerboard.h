@@ -18,7 +18,7 @@ public:
         this->size = size;
     }
 
-    void calculate_hit_distance(ray& r) {
+    void calculate_hit_distance(ray& r) override {
         double hit_distance = -1.0 * r.origin.y / r.direction.y;
         if (hit_distance < 0)
             return;
@@ -27,11 +27,11 @@ public:
         r.set_hit(hit_distance, this, vector3f(0, 1, 0));
     }
 
-    vector3f normal_at(vector3f& point) {
+    vector3f normal_at(vector3f& point) override {
         return vector3f(0, 1, 0);
     }
 
-    color get_color_at(vector3f point) {
+    color get_color_at(vector3f &point) override {
         int i = (int) (point.x + i_limit * this->size) / this->size; // don't optimize this
         int j = (int) (point.z + j_limit * this->size) / this->size; // don't optimize this
         if ((i + j) % 2 == 0)
@@ -40,7 +40,7 @@ public:
             return color(0, 0, 0);
     }
 
-    void show() {
+    void show() override {
         for (int i = -i_limit; i < i_limit; i++) {
             for (int j = -j_limit; j < j_limit; j++) {
                 if ((i + j) % 2 == 0) 
@@ -57,7 +57,7 @@ public:
         }
     }
 
-    void print() {
+    void print() override {
         cout << "Checkerboard: " << endl;
         cout << "Size: " << this->size << endl;
         cout << "Ambient: " << this->ambient << endl;
