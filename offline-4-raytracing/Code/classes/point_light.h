@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <cassert>
 #include <gl/glut.h>
 #include "vector3f.h"
 #include "interfaces.h"
@@ -13,13 +14,12 @@ class point_light : public light {
     }
 
     bool is_visible_from(vector3f point, vector3f &normal, std::vector<shape3d*> objects) {
-        const double offset = 1;
         vector3f direction = (position - point).normalize();
         double distance_to_source = (position - point).length();
         ray to_source = ray(point + normal * offset, direction);
         for(auto object : objects) {
-            //! might change
             object->calculate_hit_distance(to_source);
+            // assert (to_source.hit_info.object != this);
             if(to_source.hit_info.hit && to_source.hit_info.distance < distance_to_source - offset) {
                 return false;
             }

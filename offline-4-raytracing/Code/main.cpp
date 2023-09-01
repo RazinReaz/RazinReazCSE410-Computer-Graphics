@@ -336,9 +336,9 @@ int main(int argc, char **argv)
     }
     in.close();
 
-    // for (auto light : lights) {
-    //     light->print();
-    // }
+    for (auto light : lights) {
+        light->print();
+    }
     for (auto object : objects) {
         object->print();
     }
