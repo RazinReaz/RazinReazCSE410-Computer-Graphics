@@ -11,88 +11,6 @@
 
 class cube : public shape3d {
     public:
-
-    typedef struct face_ {
-        // all faces are parallel to either xy, yz or zx plane
-        vector3f normal;
-        vector3f mid_point;
-        double size;
-
-        face_(){
-            normal = vector3f(0, 0, 0);
-            mid_point = vector3f(0, 0, 0);
-            size = 0;
-        }
-
-        face_(vector3f normal, vector3f mid_point, double size) {
-            this->normal = normal;
-            this->mid_point = mid_point;
-            this->size = size;
-            assert (size > 0);
-            assert (normal.length() == 1);
-            assert((normal.x == 0 && normal.y == 0) || (normal.y == 0 && normal.z == 0) || (normal.z == 0 && normal.x == 0));
-        }
-
-        //assignment operator
-        face_ &operator=(const face_ &f) {
-            this->normal = f.normal;
-            this->mid_point = f.mid_point;
-            this->size = f.size;
-            return *this;
-        }
-
-        inline bool within (const double &q, const double &min, const double &max) {
-            return (q >= min && q <= max);
-        }
-
-        bool is_hit_by_ray(ray &r, double &distance) {
-            distance = (mid_point - r.origin).dot(normal) / r.direction.dot(normal);
-            if (distance < 0) return false;
-            vector3f point = r.origin + r.direction * distance;
-            return contains_point(point);
-        }
-
-        bool contains_point(const vector3f &point) {
-            if (normal.x != 0) {
-                // face parallel to yz plane
-                return within(point.y, mid_point.y - size / 2, mid_point.y + size / 2) && within(point.z, mid_point.z - size / 2, mid_point.z + size / 2);
-            } else if (normal.y != 0) {
-                // face parallel to zx plane
-                return within(point.x, mid_point.x - size / 2, mid_point.x + size / 2) && within(point.z, mid_point.z - size / 2, mid_point.z + size / 2);
-            } else {
-                // face parallel to xy plane
-                return within(point.x, mid_point.x - size / 2, mid_point.x + size / 2) && within(point.y, mid_point.y - size / 2, mid_point.y + size / 2);
-            }
-        }
-
-        void show() {
-            // std::cout << "showing face with normal" << normal << std::endl;
-            glPushMatrix();
-            glTranslatef(mid_point.x, mid_point.y, mid_point.z);
-            glBegin(GL_QUADS);
-                if(normal.x != 0) {
-                    glNormal3f(normal.x, 0, 0);
-                    glVertex3f(0, size / 2, size / 2);
-                    glVertex3f(0, -size / 2, size / 2);
-                    glVertex3f(0, -size / 2, -size / 2);
-                    glVertex3f(0, size / 2, -size / 2);
-                } else if (normal.y != 0) {
-                    glNormal3f(0, normal.y, 0);
-                    glVertex3f(size / 2, 0, size / 2);
-                    glVertex3f(-size / 2, 0, size / 2);
-                    glVertex3f(-size / 2, 0, -size / 2);
-                    glVertex3f(size / 2, 0, -size / 2);
-                } else {
-                    glNormal3f(0, 0, normal.z);
-                    glVertex3f(size / 2, size / 2, 0);
-                    glVertex3f(-size / 2, size / 2, 0);
-                    glVertex3f(-size / 2, -size / 2, 0);
-                    glVertex3f(size / 2, -size / 2, 0);
-                }
-            glEnd();
-            glPopMatrix();
-        }
-    } face_;
     vector3f position;
     double size;
     color clr;
@@ -111,8 +29,8 @@ class cube : public shape3d {
     }
 
     void calculate_hit_distance(ray &r) override {
+        double distance;
         for (auto face : this->faces) {
-            double distance;
             if (face.is_hit_by_ray(r, distance)) {
                 r.set_hit(distance, this, face.normal);
             }
@@ -126,6 +44,7 @@ class cube : public shape3d {
                 return face.normal;
             }
         }
+        assert (false);
     }
 
     color get_color_at(vector3f &point) override {
@@ -137,9 +56,6 @@ class cube : public shape3d {
         glPushMatrix();
         glTranslated(position.x, position.y, position.z);
         glColor3f(clr.r, clr.g, clr.b);
-        // for (auto face : faces) {
-        //     face.show();
-        // }
         glutSolidCube(size);
         glPopMatrix();
     }

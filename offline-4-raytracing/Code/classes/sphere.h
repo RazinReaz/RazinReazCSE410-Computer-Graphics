@@ -6,20 +6,19 @@
 #include "color.h"
 #include "interfaces.h"
 
-using namespace std;
 
 class sphere : public shape3d
 {
 private:
-    bool is_ray_inside(ray &r)
+    inline bool is_ray_inside(ray &r)
     {
         return (this->center - r.origin).length() < this->radius;
     }
-    bool is_ray_outside(ray &r)
+    inline bool is_ray_outside(ray &r)
     {
         return (this->center - r.origin).length() > this->radius;
     }
-    double closest_point_on_ray(ray &r)
+    inline double closest_point_on_ray(ray &r)
     {
         return (this->center - r.origin).dot(r.direction);
     }
@@ -50,6 +49,13 @@ public:
 
     void calculate_hit_distance(ray &r)
     {
+        //optimization : fast disregard
+        // bool ray_origin_inside = is_ray_inside(r);
+        // bool ray_origin_outside = is_ray_outside(r);
+        // double closest_t_from_center_to_ray = closest_point_on_ray(r);
+        // if (ray_origin_outside && closest_t_from_center_to_ray < 0)
+        //     return;
+        
         double a = r.direction.dot(r.direction);
         double b = 2 * r.direction.dot(r.origin - this->center);
         double c = (r.origin - this->center).dot(r.origin - this->center) - this->radius * this->radius;
@@ -60,7 +66,7 @@ public:
         double t1 = (-b + sqrt(discriminant)) / (2 * a);
         double t2 = (-b - sqrt(discriminant)) / (2 * a);
 
-        double t = min(t1, t2);
+        double t = std::min(t1, t2);
         vector3f hit_point = r.origin + r.direction * t;
         vector3f normal = normal_at(hit_point);
         r.set_hit(t, this, normal);
@@ -114,24 +120,20 @@ public:
 
     void print()
     {
-        cout << "Sphere: " << endl;
-        cout << "Center: " << this->center << endl;
-        cout << "Radius: " << this->radius << endl;
-        cout << "Color: " << this->clr.r << ", " << this->clr.g << ", " << this->clr.b << endl;
-        cout << "Ambient: " << this->ambient << endl;
-        cout << "Diffuse: " << this->diffuse << endl;
-        cout << "Specular: " << this->specular << endl;
-        cout << "Reflection: " << this->reflection << endl;
-        cout << "Shininess: " << this->shininess << endl;
+        std::cout << "Sphere: " << std::endl;
+        std::cout << "Center: " << this->center << std::endl;
+        std::cout << "Radius: " << this->radius << std::endl;
+        std::cout << "Color: " << this->clr.r << ", " << this->clr.g << ", " << this->clr.b << std::endl;
+        std::cout << "Ambient: " << this->ambient << std::endl;
+        std::cout << "Diffuse: " << this->diffuse << std::endl;
+        std::cout << "Specular: " << this->specular << std::endl;
+        std::cout << "Reflection: " << this->reflection << std::endl;
+        std::cout << "Shininess: " << this->shininess << std::endl;
     }
 
-    void change_color(color c)
-    {
-        this->clr = c;
-    }
 
     ~sphere()
     {
-        cerr << "Sphere destructor called" << endl;
+        std::cerr << "Sphere destructor called" << std::endl;
     }
 };

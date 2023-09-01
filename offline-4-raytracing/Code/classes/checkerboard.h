@@ -8,7 +8,7 @@
 #include "interfaces.h"
 
 
-using namespace std;
+
 class checkerboard : public shape3d
 {
     const int i_limit = 100, j_limit = 100;
@@ -58,10 +58,10 @@ public:
     }
 
     void print() override {
-        cout << "Checkerboard: " << endl;
-        cout << "Size: " << this->size << endl;
-        cout << "Ambient: " << this->ambient << endl;
-        cout << "Diffuse: " << this->diffuse << endl;
-        cout << "Reflection: " << this->reflection << endl;
+        std::cout << "Checkerboard: " << std::endl;
+        std::cout << "Size: " << this->size << std::endl;
+        std::cout << "Ambient: " << this->ambient << std::endl;
+        std::cout << "Diffuse: " << this->diffuse << std::endl;
+        std::cout << "Reflection: " << this->reflection << std::endl;
     }
 };

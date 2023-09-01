@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <gl/glut.h>
+#include <chrono>
 
 #include "classes/bitmap_image.hpp"
 #include "classes/camera.h"
@@ -15,7 +16,24 @@
 #include "classes/point_light.h"
 #include "classes/sphere.h"
 #include "classes/cube.h"
+#include "classes/pyramid.h"
 #include "classes/checkerboard.h"
+
+Camera camera;
+bitmap_image image;
+
+int fovY, aspect_ratio, near_, far_;
+int window_size, recursions, checkerboard_size, image_width, image_height;
+double checkboard_ambient, checkboard_diffuse, checkboard_reflection;
+double near_height, near_width, dw, dh;
+
+
+std::vector<shape3d *> objects;
+std::vector<light *> lights;
+
+vector3f x_axis = {1, 0, 0};
+vector3f y_axis = {0, 1, 0};
+vector3f z_axis = {0, 0, 1};
 
 namespace utils
 {
@@ -27,9 +45,55 @@ namespace utils
         if ((int)completed % 10 == 0 && !printed[(int)std::round(completed / 10)])
         {
             printed[(int)std::round(completed / 10)] = true;
-            cout << "Rendering " << (int)completed << "% completed" << endl;
+            std::cout << "Rendering " << (int)completed << "% completed" << std::endl;
         }
         return;
+    }
+
+    void capture() {
+        int red = 0, green = 0, blue = 0;
+
+        image.clear();
+        printed = std::vector<bool>(11, false);
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        for (int i = 0; i < image_height; i++)
+        {
+            for (int j = 0; j < image_width; j++)
+            {
+                vector3f pixel_position = camera.get_position() + camera.get_direction() * near_ + camera.get_right() * (j - (image_width - 1) / 2) * dw + camera.get_up() * ((image_height - 1) / 2 - i) * dh;
+                vector3f ray_direction = pixel_position - camera.get_position();
+                ray r(pixel_position, ray_direction);
+
+                for (auto object : objects)
+                {
+                    object->calculate_hit_distance(r);
+                }
+                if (r.hit_info.hit)
+                {
+                    vector3f point = r.origin + r.direction * r.hit_info.distance;
+                    color ambient_diffuse_specular_component = r.hit_info.object->get_diffuse_and_specular_color(point, r, lights, objects); 
+                    color reflection_component = r.hit_info.object->get_reflection_color(point, r, lights, objects, recursions);
+                    color c = ambient_diffuse_specular_component + reflection_component;
+                    red = c.r * 255;
+                    green = c.g * 255;
+                    blue = c.b * 255;
+                }
+                else
+                {
+                    red = sky_color.r * 255;
+                    green = sky_color.g * 255;
+                    blue = sky_color.b * 255;
+                }
+                image.set_pixel(j, i, red, green, blue);
+                // progress_report(i, j, image_width, image_height);
+            }
+        }
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << "Rendering 100% completed" << std::endl;
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+        std::cout << "Time taken = " << elapsed_time << "[ms]" << std::endl;
+        image.save_image("out.bmp");
+        std::cout << "image saved\n"<< std::endl;
     }
 }
 
@@ -37,23 +101,11 @@ using namespace std;
 
 void initGL()
 {
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black and opaque
+    glClearColor(sky_color.r, sky_color.g, sky_color.b, 1.0f); // Black and opaque
     glEnable(GL_DEPTH_TEST);              // Enable depth testing for z-culling
 }
 
-Camera camera;
-bitmap_image image;
 
-int fovY, aspect_ratio, near_, far_;
-int window_size, recursions, checkerboard_size, image_width, image_height;
-double checkboard_ambient, checkboard_diffuse, checkboard_reflection;
-
-vector<shape3d *> objects;
-vector<light *> lights;
-
-vector3f x_axis = {1, 0, 0};
-vector3f y_axis = {0, 1, 0};
-vector3f z_axis = {0, 0, 1};
 
 void draw_line(vector3f start, vector3f end, color c = color(0, 1, 0))
 {
@@ -116,54 +168,7 @@ void keyboardListener(unsigned char key, int xx, int yy)
     {
     case '0':
     {
-        double height = 2 * near_ * tan(fovY * PI / 360);
-        double width = height * aspect_ratio;
-        double dw = width / image_width;
-        double dh = height / image_height;
-
-        image.clear();
-        utils::printed = std::vector<bool>(11, false);
-        for (int i = 0; i < image_height; i++)
-        {
-            for (int j = 0; j < image_width; j++)
-            {
-                vector3f pixel_position = camera.get_position() + camera.get_direction() * near_ + camera.get_right() * (j - (image_width - 1) / 2) * dw + camera.get_up() * ((image_height - 1) / 2 - i) * dh;
-                vector3f ray_direction = pixel_position - camera.get_position();
-                ray r(pixel_position, ray_direction);
-
-                int red = 0, green = 0, blue = 0;
-                for (auto object : objects)
-                {
-                    object->calculate_hit_distance(r);
-                }
-                if (r.hit_info.hit)
-                {
-                    vector3f point = r.origin + r.direction * r.hit_info.distance;
-                    // red = r.hit_info.object->get_color(point).r * 255;
-                    // green = r.hit_info.object->get_color(point).g * 255;
-                    // blue = r.hit_info.object->get_color(point).b * 255;
-                    color ambient_diffuse_specular_component = r.hit_info.object->get_diffuse_and_specular_color(point, r, lights, objects); // here i am passing pointer to r, otherwise it gives circular dependency error
-                    color reflection_component = r.hit_info.object->get_reflection_color(point, r, lights, objects, recursions);
-                    color c = ambient_diffuse_specular_component + reflection_component;
-                    red = c.r * 255;
-                    green = c.g * 255;
-                    blue = c.b * 255;
-                }
-                else
-                {
-                    red = sky_color.r * 255;
-                    green = sky_color.g * 255;
-                    blue = sky_color.b * 255;
-                }
-                image.set_pixel(j, i, red, green, blue);
-                utils::progress_report(i, j, image_width, image_height);
-            }
-        }
-        cout << "Rendering 100% completed" << endl;
-
-        image.save_image("out.bmp");
-        cout << "image saved\n"
-             << endl;
+        utils::capture();
         break;
     }
     case '1':
@@ -289,8 +294,22 @@ int main(int argc, char **argv)
             in >> position.x >> position.y >> position.z >> size >> clr.r >> clr.g >> clr.b;
             in >> ambient >> diffuse >> specular >> reflection >> shininess;
             cube *c = new cube(position, size, clr, ambient, diffuse, specular, reflection, shininess);
-            c->print();
             objects.push_back(c);
+        }
+        else if (object_type == "pyramid")
+        {
+            vector3f base_center;
+            double width, height, ambient, diffuse, specular, reflection, shininess;
+            color clr;
+            in >> base_center.x >> base_center.y >> base_center.z >> width >> height >> clr.r >> clr.g >> clr.b;
+            in >> ambient >> diffuse >> specular >> reflection >> shininess;
+            pyramid *p = new pyramid(base_center, width, height, clr, ambient, diffuse, specular, reflection, shininess);
+            objects.push_back(p);
+        }
+        else
+        {
+            std::cout << "Invalid object type" << std::endl;
+            exit(0);
         }
     }
     in >> number_of_point_lights;
@@ -303,11 +322,15 @@ int main(int argc, char **argv)
         lights.push_back(l);
     }
     in.close();
+    near_height = 2 * near_ * tan(fovY * PI / 360);
+    near_width = near_height * aspect_ratio;
+    dw = near_width / image_width;
+    dh = near_height / image_height;
     image.setwidth_height(image_width, image_height);
 
     glutInit(&argc, argv);                                    // Initialize GLUT
-    glutInitWindowSize(window_size, window_size);             // Set the window's initial width & height
-    glutInitWindowPosition(50, 50);                           // Position the window's initial top-left corner
+    glutInitWindowSize(600, 600);             // Set the window's initial width & height
+    glutInitWindowPosition(750, 100);                           // Position the window's initial top-left corner
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB); // Depth, Double buffer, RGB color
     glutCreateWindow("Raytracing");                           // Create a window with the given title
     glutDisplayFunc(display);                                 // Register display callback handler for window re-paint
