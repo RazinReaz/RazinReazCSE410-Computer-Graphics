@@ -6,7 +6,8 @@
 #include "vector3f.h"
 #include "color.h"
 
-const color sky_color = {0.53, 0.8, 0.92};
+// const color sky_color = {0.53, 0.8, 0.92};
+const color sky_color = {0.0, 0.0, 0.0};
 class ray;
 class shape3d;
 
@@ -14,15 +15,16 @@ class light
 {
 public:
     vector3f position;
-    double falloff;
+    double falloff, offset = 0.1;
 
     light(vector3f position, double falloff)
     {
         this->position = position;
         this->falloff = falloff;
     }
-    virtual bool is_visible_from(vector3f point, ray &r, std::vector<shape3d *> shape) = 0;
+    virtual bool is_visible_from(vector3f point, vector3f &normal, std::vector<shape3d *> shape) = 0;
     virtual void show() = 0;
+    virtual void print() = 0;
 };
 
 typedef struct Hit_info
@@ -103,13 +105,6 @@ typedef struct face_
     vector3f mid_point;
     double size;
 
-    face_()
-    {
-        normal = vector3f(0, 0, 0);
-        mid_point = vector3f(0, 0, 0);
-        size = 0;
-    }
-
     face_(vector3f normal, vector3f mid_point, double size)
     {
         this->normal = normal;
@@ -148,18 +143,43 @@ typedef struct face_
         if (normal.x != 0)
         {
             // face parallel to yz plane
-            return within(point.y, mid_point.y - size / 2, mid_point.y + size / 2) && within(point.z, mid_point.z - size / 2, mid_point.z + size / 2);
+            return within(point.y, mid_point.y - size / 2, mid_point.y + size / 2) && within(point.z, mid_point.z - size / 2, mid_point.z + size / 2) && (point.x == mid_point.x);
         }
         else if (normal.y != 0)
         {
             // face parallel to zx plane
-            return within(point.x, mid_point.x - size / 2, mid_point.x + size / 2) && within(point.z, mid_point.z - size / 2, mid_point.z + size / 2);
+            return within(point.x, mid_point.x - size / 2, mid_point.x + size / 2) && within(point.z, mid_point.z - size / 2, mid_point.z + size / 2) && (point.y == mid_point.y);
         }
         else
         {
             // face parallel to xy plane
-            return within(point.x, mid_point.x - size / 2, mid_point.x + size / 2) && within(point.y, mid_point.y - size / 2, mid_point.y + size / 2);
+            return within(point.x, mid_point.x - size / 2, mid_point.x + size / 2) && within(point.y, mid_point.y - size / 2, mid_point.y + size / 2) && (point.z == mid_point.z);
         }
+    }
+
+    void show() {
+        glBegin(GL_QUADS);
+        if (normal.x != 0) {
+            glVertex3f(mid_point.x, mid_point.y - size / 2, mid_point.z - size / 2);
+            glVertex3f(mid_point.x, mid_point.y + size / 2, mid_point.z - size / 2);
+            glVertex3f(mid_point.x, mid_point.y + size / 2, mid_point.z + size / 2);
+            glVertex3f(mid_point.x, mid_point.y - size / 2, mid_point.z + size / 2);
+        } else if (normal.y != 0) {
+            glVertex3f(mid_point.x - size / 2, mid_point.y, mid_point.z - size / 2);
+            glVertex3f(mid_point.x + size / 2, mid_point.y, mid_point.z - size / 2);
+            glVertex3f(mid_point.x + size / 2, mid_point.y, mid_point.z + size / 2);
+            glVertex3f(mid_point.x - size / 2, mid_point.y, mid_point.z + size / 2);
+        } else {
+            glVertex3f(mid_point.x - size / 2, mid_point.y - size / 2, mid_point.z);
+            glVertex3f(mid_point.x + size / 2, mid_point.y - size / 2, mid_point.z);
+            glVertex3f(mid_point.x + size / 2, mid_point.y + size / 2, mid_point.z);
+            glVertex3f(mid_point.x - size / 2, mid_point.y + size / 2, mid_point.z);
+        }
+        glEnd();
+    }
+
+    ~face_()
+    {
     }
 } face_;
 
@@ -197,6 +217,14 @@ typedef struct triangle_ {
         vector3f point = r.origin + r.direction * distance;
         return contains_point(point);
     }
+
+    void show() {
+        glBegin(GL_TRIANGLES);
+        glVertex3f(a.x, a.y, a.z);
+        glVertex3f(b.x, b.y, b.z);
+        glVertex3f(c.x, c.y, c.z);
+        glEnd();
+    }
 } triangle_;
 
 class shape3d
@@ -230,14 +258,16 @@ color shape3d::get_diffuse_and_specular_color(vector3f point, ray &r, std::vecto
     double lambert = 0,
            phong = 0;
     vector3f N = this->normal_at(point);
+    // return color((N.x+1)/2, (N.y+1)/2, (N.z+1)/2);
     vector3f R = r.reflect(point, N).direction;
 
     for (auto light : lights)
     {
-        if (!light->is_visible_from(point, r, objects))
+        if (!light->is_visible_from(point, N, objects))
         {
             continue;
         }
+        // return color(0, 1, 0); //!
         vector3f to_source = (light->position - point).normalize();
         double distance = (light->position - point).length();
         double scaling_factor = exp(-1 * distance * distance * light->falloff);
@@ -248,10 +278,14 @@ color shape3d::get_diffuse_and_specular_color(vector3f point, ray &r, std::vecto
         // specular component
         phong += pow(R.dot(to_source), shininess) * scaling_factor;
     }
+    // if(lambert == 0) {
+    //     return color(0, 1, 0);
+    // }
     color object_color = get_color_at(point);
 
     double diffuse_component = this->diffuse * lambert;
     double specular_component = this->specular * phong;
+    
     return object_color * (this->ambient + diffuse_component + specular_component);
 };
 

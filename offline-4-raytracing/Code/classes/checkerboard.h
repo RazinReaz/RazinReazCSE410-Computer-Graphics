@@ -28,6 +28,8 @@ public:
     }
 
     vector3f normal_at(vector3f& point) override {
+        // if (camera.get_direction().z > 0)
+        //     return vector3f(0, -1, 0);
         return vector3f(0, 1, 0);
     }
 

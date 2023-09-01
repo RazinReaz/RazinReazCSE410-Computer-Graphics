@@ -12,10 +12,9 @@ class point_light : public light {
     point_light(vector3f position, double falloff) : light(position, falloff) {
     }
 
-    bool is_visible_from(vector3f point, ray& r, std::vector<shape3d*> objects) {
+    bool is_visible_from(vector3f point, vector3f &normal, std::vector<shape3d*> objects) {
         const double offset = 1;
         vector3f direction = (position - point).normalize();
-        vector3f normal = r.hit_info.object->normal_at(point);
         double distance_to_source = (position - point).length();
         ray to_source = ray(point + normal * offset, direction);
         for(auto object : objects) {
@@ -63,6 +62,12 @@ class point_light : public light {
             glEnd();
         }
         glPopMatrix();
+    }
+
+    void print() {
+        std::cout << "Point Light: " << std::endl;
+        std::cout << "Position: " << this->position << std::endl;
+        std::cout << "Falloff: " << this->falloff << std::endl << std::endl;
     }
 
     ~point_light() {

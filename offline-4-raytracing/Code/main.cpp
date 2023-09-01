@@ -13,13 +13,15 @@
 #include "classes/color.h"
 #include "classes/interfaces.h"
 
+Camera camera;
+
 #include "classes/point_light.h"
+#include "classes/spotlight.h"
 #include "classes/sphere.h"
 #include "classes/cube.h"
 #include "classes/pyramid.h"
 #include "classes/checkerboard.h"
 
-Camera camera;
 bitmap_image image;
 
 int fovY, aspect_ratio, near_, far_;
@@ -38,6 +40,7 @@ vector3f z_axis = {0, 0, 1};
 namespace utils
 {
     std::vector<bool> printed(11, false);
+    int count = 0;
     void progress_report(int i, int j, int image_width, int image_height)
     {
         double completed = (i * image_width + j) * 100.0 / (image_width * image_height);
@@ -85,13 +88,14 @@ namespace utils
                     blue = sky_color.b * 255;
                 }
                 image.set_pixel(j, i, red, green, blue);
-                // progress_report(i, j, image_width, image_height);
+                progress_report(i, j, image_width, image_height);
             }
         }
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout << "Rendering 100% completed" << std::endl;
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
         std::cout << "Time taken = " << elapsed_time << "[ms]" << std::endl;
+        // image.save_image("out"+ std::to_string(count++) +".bmp");
         image.save_image("out.bmp");
         std::cout << "image saved\n"<< std::endl;
     }
@@ -123,9 +127,9 @@ void draw_checkerboard(int checkerboard_size)
 void draw_axes()
 {
     glLineWidth(3);
-    draw_line({0, 0, 0}, x_axis * 500);
-    draw_line({0, 0, 0}, y_axis * 500);
-    draw_line({0, 0, 0}, z_axis * 500);
+    draw_line({0, 0, 0}, x_axis * 500, {1, 0, 0});
+    draw_line({0, 0, 0}, y_axis * 500, {0, 1, 0});
+    draw_line({0, 0, 0}, z_axis * 500, {0, 0, 1});
 }
 
 void display()
@@ -321,7 +325,23 @@ int main(int argc, char **argv)
         point_light *l = new point_light(position, falloff);
         lights.push_back(l);
     }
+    in >> number_of_spotlights;
+    for (int i = 0; i < number_of_spotlights; i++)
+    {
+        vector3f position, direction;
+        double falloff, cutoff_angle;
+        in >> position.x >> position.y >> position.z >> falloff >> direction.x >> direction.y >> direction.z >> cutoff_angle;
+        spotlight *l = new spotlight(position, falloff, cutoff_angle, direction);
+        lights.push_back(l);
+    }
     in.close();
+
+    // for (auto light : lights) {
+    //     light->print();
+    // }
+    for (auto object : objects) {
+        object->print();
+    }
     near_height = 2 * near_ * tan(fovY * PI / 360);
     near_width = near_height * aspect_ratio;
     dw = near_width / image_width;
