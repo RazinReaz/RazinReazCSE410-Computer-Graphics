@@ -6,6 +6,8 @@ This is a simple ray tracing project. The implemented features are
 - press `0` to capture
 
 # Results
+![Ray tracing 1](./Code/assets/out-0.bmp)
+![Ray tracing 2](./Code/assets/out-1.bmp)
 To make it easier for viewers to understand what this code does, I have generated two gifs by capturing the ray-casted image from the OpenGL window. 
 
 ## 5 Spheres
