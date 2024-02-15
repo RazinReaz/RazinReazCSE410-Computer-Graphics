@@ -6,8 +6,6 @@ This is a simple ray tracing project. The implemented features are
 - press `0` to capture
 
 # Results
-![Ray tracing 1](./Code/assets/out-0.bmp)
-![Ray tracing 2](./Code/assets/out-1.bmp)
 To make it easier for viewers to understand what this code does, I have generated two gifs by capturing the ray-casted image from the OpenGL window. 
 
 ## 5 Spheres
@@ -17,3 +15,7 @@ first gif is with 5 spheres scattered in the scene. There are 2 point lights and
 ## 8 spheres
 second gif is with 8 spheres scattered in the scene. There are 3 point lights and 2 spotlights
 ![Ray tracing with 8 spheres](./Code/assets/8%20spheres/output.gif)
+## Original resolution
+The gifs lost a lot of fidelity. These pictures contain the whole resolution.
+![Ray tracing 1](./Code/assets/out-0.bmp)
+![Ray tracing 2](./Code/assets/out-1.bmp)
