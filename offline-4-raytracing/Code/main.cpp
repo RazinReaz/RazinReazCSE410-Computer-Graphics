@@ -39,6 +39,7 @@ vector3f z_axis = {0, 0, 1};
 
 namespace utils
 {
+
     std::vector<bool> printed(11, false);
     int count = 0;
     void progress_report(int i, int j, int image_width, int image_height)
@@ -95,8 +96,8 @@ namespace utils
         std::cout << "Rendering 100% completed" << std::endl;
         auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
         std::cout << "Time taken = " << elapsed_time << "[ms]" << std::endl;
-        // image.save_image("out"+ std::to_string(count++) +".bmp");
-        image.save_image("out.bmp");
+        image.save_image("out-"+ std::to_string(count++) +".bmp");
+        // image.save_image("out.bmp");
         std::cout << "image saved\n"<< std::endl;
     }
 }

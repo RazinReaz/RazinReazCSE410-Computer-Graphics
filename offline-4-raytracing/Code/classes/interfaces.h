@@ -6,8 +6,8 @@
 #include "vector3f.h"
 #include "color.h"
 #define EPSILON 0.00001
-// const color sky_color = {0.53, 0.8, 0.92};
-const color sky_color = {0.0, 0.0, 0.0};
+const color sky_color = {0.53, 0.8, 0.92};
+// const color sky_color = {0.0, 0.0, 0.0};
 class ray;
 class shape3d;
 
@@ -273,7 +273,7 @@ color shape3d::get_diffuse_and_specular_color(vector3f point, ray &r, std::vecto
     {
         if (!light->is_visible_from(point, N, objects))
         {
-            return color(1, 0, 0);
+            // return color(1, 0, 0);
             continue;
         }
         // return color(0, 1, 0);
